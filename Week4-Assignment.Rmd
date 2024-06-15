@@ -1,0 +1,177 @@
+---
+title: "ANA 515 Assignment 2 - SPY ETF Data Analysis"
+author: "Shanmugapriya Mohan Kumar"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme:
+      bootswatch: minty
+---
+
+
+<style>
+  h1.title {
+    text-align: center;
+  }
+  h4.author {
+    text-align: center;
+  }
+  h4.date {
+    text-align: center;
+  }
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE, message = TRUE, warning = FALSE)
+library(tidyverse)
+library(knitr)
+library(bslib)
+library(readr)
+library(rmarkdown)
+library(dplyr)  # for data manipulation
+library(lubridate)  # for date handling
+```
+
+### Dataset Description
+ 
+The dataset measures the daily stock performance of the SPDR S&P 500 ETF (SPY). This dataset contains variables such as <br>
+1.	Open – Open price of that trading day.<br>
+2.	High - High price of that trading day.<br>
+3.	Low - Low price of that trading day.<br>
+4.	Close - Closing price of that trading day.<br>
+5.	Volume – trading volume of that trading day.<br>
+6.	Date - date of that trading day.<br>
+
+This data set is used to analyze historical price movements, identify trends and patterns, trading strategies, predict future prices, and make investment decisions.<br>
+This data is collected from stock exchanges or financial data provider services such as Yahoo Finance or Google Finance.
+
+**Research Questions:**<br>
+1.	What are the trends and patterns of stock price movements?<br>
+2.	How was the performance of SPY over a specific period?<br>
+3.	Can historical data be used to predict future prices?<br>
+
+**File Format:** File type is CSV and delimiter is Comma (,). The CSV files can be opened with Microsoft Excel, Google sheets, Statistical software such as R or Python’s Pandas library.
+
+
+``` {r load-data, echo=TRUE}
+# Dataset URL
+spy_data <- "https://raw.githubusercontent.com/ShanmugapriyaMohankumar/StockMarket/main/SPY.csv"
+
+# Read the dataset from the URL
+spy500_data <- read_csv(spy_data,show_col_types = FALSE) #read_csv is part of the readr package, which is included in the tidyverse collection of R packages
+
+#display the first few rows of the dataframe
+head(spy500_data)
+
+#Number of rows in the original dataset
+spy500_data_row_count <- nrow(spy500_data)
+
+#Number of columns in the original dataset
+spy500_data_column_count <- ncol(spy500_data)
+
+```
+
+``` {r clean-data, echo=TRUE}
+# Display the actual column names
+colnames(spy500_data)
+
+# Clean the data
+spy500_data_clean <- spy500_data %>%
+  rename(
+    Open_price = Open,
+    High_price = High,
+    Low_price = Low,
+    Close_price = Close
+    ) %>%
+  mutate(
+    Date = ymd(Date)  # Convert the date column to Date format
+  ) %>%
+  arrange(desc(Volume))  # Arrange the data by volume in descending order
+
+# Display the first few rows of the cleaned dataframe to verify the data is cleaned correctly
+head(spy500_data_clean)
+
+# Filter the dataset to include only the columns of interest
+spy500_data_filtered <- spy500_data_clean %>%
+  select(Date, Open_price, High_price, Close_price, Volume)
+
+# Display the first few rows of the filtered dataframe
+head(spy500_data_filtered)
+
+# Find the date with the highest volume
+highest_volume <- spy500_data_clean %>%
+  slice_max(Volume, n=1) 
+
+# Extract the date and volume
+highest_volume_date <- highest_volume$Date
+highest_volume_value <- highest_volume$Volume
+```
+
+### Date with the Highest Trading Volume:
+The date with the highest trading volume is `r highest_volume_date`, with a volume of `r highest_volume_value`.<br>
+
+### Data Frame Information
+This data set has `r spy500_data_row_count` rows and `r spy500_data_column_count` columns.<br>
+The names of the columns and a brief description of each are in the table below:<br>
+  
+  
+```{r Column-description-table, echo=TRUE}
+# Create a dataframe for column descriptions
+column_descriptions <- data.frame(
+  Column_number = c("1", "2", "3", "4", "5", "6"),
+  Column = c("Date", "Open", "High", "Low", "Close", "Volume"),
+  Description = c(
+    "The date of the trading day",
+    "The opening price of the trading day",
+    "The highest price of the trading day",
+    "The lowest price of the trading day",
+    "The closing price of the trading day",
+    "The trading volume of the trading day"
+  )
+)
+
+# Display the table
+kable(column_descriptions, col.names = c("Column Number", "Column Name", "Description"))
+```
+
+```{r summary-statistics, echo=TRUE}
+# Create a subset of the dataframe with selected columns
+spy500_data_subset <- spy500_data_filtered %>%
+  select(Open_price, High_price, Close_price)
+
+# Calculate summary statistics
+summary_statistics <- spy500_data_subset %>%
+  summarise(
+    Open_price_min = min(Open_price, na.rm = TRUE),
+    Open_price_max = max(Open_price, na.rm = TRUE),
+    Open_price_mean = mean(Open_price, na.rm = TRUE),
+    Open_price_na_count = sum(is.na(Open_price)),
+    High_price_min = min(High_price, na.rm = TRUE),
+    High_price_max = max(High_price, na.rm = TRUE),
+    High_price_mean = mean(High_price, na.rm = TRUE),
+    High_price_na_count = sum(is.na(High_price)),
+    Close_price_min = min(Close_price, na.rm = TRUE),
+    Close_price_max = max(Close_price, na.rm = TRUE),
+    Close_price_mean = mean(Close_price, na.rm = TRUE),
+    Close_price_na_count = sum(is.na(Close_price))
+  )
+
+# Display the summary statistics in a table
+# Create a dataframe for the summary statistics
+summary_df <- data.frame(
+  Statistic = c("Minimum", "Maximum", "Mean", "Missing Values"),
+  Open = c(summary_statistics$Open_price_min, summary_statistics$Open_price_max, summary_statistics$Open_price_mean, summary_statistics$Open_price_na_count),
+  High = c(summary_statistics$High_price_min, summary_statistics$High_price_max, summary_statistics$High_price_mean, summary_statistics$High_price_na_count),
+  Close = c(summary_statistics$Close_price_min, summary_statistics$Close_price_max, summary_statistics$Close_price_mean, summary_statistics$Close_price_na_count)
+)
+```
+
+### Summary Statistics - S&P 500 Data(past 1 year)
+```{r summary-statistics-display-table, echo=TRUE}
+# Display the table
+kable(summary_df, col.names = c("Statistic", "Open Price", "High Price", "Close Price"))
+
+```
+
+
